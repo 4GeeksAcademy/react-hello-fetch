@@ -5,34 +5,65 @@ const Home = () => {
   const [inputValue, setInputValue] = useState("");
 
   useEffect(() => {
-	fetch('https://playground.4geeks.com/apis/fake/todos/user/JonayJ')
-	  .then(resp => {
-		try {
-		  return resp.json();
-		} catch (error) {
-		  throw new Error('Error parsing JSON response');
-		}
-	  })
-	  .then(data => {
-		console.log(data);
-		setTasks(data);
-	  })
-	  .catch(error => {
-		console.error('Error fetching tasks:', error);
-	  });
+    fetchTasks();
   }, []);
 
-  const addTask = (event) => {
-    if (event.key === "Enter" && inputValue !== "") {
-      setTasks([...tasks, inputValue]);
-      setInputValue("");
+  const fetchTasks = () => {
+    fetch('https://playground.4geeks.com/apis/fake/todos/user/Diana024')
+      .then(resp => resp.json())
+      .then(data => {
+        setTasks(data);
+      })
+      .catch(error => {
+        console.error('Error fetching tasks:', error);
+      });
+  };
+
+  const updateTodoList = async () => {
+    try {
+      const response = await fetch('https://playground.4geeks.com/apis/fake/todos/user/Diana024', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(tasks)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error updating todo list: BAD REQUEST');
+      }
+    } catch (error) {
+      console.error('Error updating todo list:', error);
     }
   };
 
-  const handleTaskDelete = (index) => {
-    const newTasks = [...tasks];
-    newTasks.splice(index, 1);
-    setTasks(newTasks);
+  const addTask = async (event) => {
+    if (event.key === 'Enter' && inputValue.trim() !== '') {
+      event.preventDefault();
+
+      try {
+        const newTask = { label: inputValue, done: false };
+        setTasks([...tasks, newTask]);
+
+        await updateTodoList();
+
+        setInputValue('');
+      } catch (error) {
+        console.error('Error adding task:', error);
+      }
+    }
+  };
+
+  const handleTaskDelete = async (index) => {
+    try {
+      const newTasks = [...tasks];
+      newTasks.splice(index, 1);
+      setTasks(newTasks);
+
+      await updateTodoList();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
   };
 
   return (
@@ -52,7 +83,7 @@ const Home = () => {
         ) : (
           tasks.map((task, index) => (
             <li key={index} onMouseEnter={() => (document.getElementById(`task-${index}`).style.display = "block")} onMouseLeave={() => (document.getElementById(`task-${index}`).style.display = "none")}>
-              {task}
+              {task.label}
               <i id={`task-${index}`} className="fas fa-trash-alt" style={{ display: "none" }} onClick={() => handleTaskDelete(index)}></i>
             </li>
           ))
@@ -63,4 +94,3 @@ const Home = () => {
 };
 
 export default Home;
-  
